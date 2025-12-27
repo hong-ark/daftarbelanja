@@ -13,16 +13,8 @@ body {
   padding: 14px;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 12px;
-}
-
-h2 {
-  margin-top: 22px;
-  font-size: 16px;
-  color: #334155;
-}
+h1 { text-align: center; margin-bottom: 12px; }
+h2 { margin-top: 22px; font-size: 16px; color: #334155; }
 
 table {
   width: 100%;
@@ -41,36 +33,18 @@ th, td {
   border-bottom: 1px solid #e5e7eb;
 }
 
-th {
-  background: #f1f5f9;
-  font-weight: 600;
+th { background: #f1f5f9; font-weight: 600; }
+td.name { text-align: left; font-weight: 600; }
+
+.buy { font-weight: 700; color: #dc2626; }
+
+tr.done {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
-td.name {
-  text-align: left;
-  font-weight: 600;
-}
-
-.buy {
-  font-weight: 700;
-  color: #dc2626;
-}
-
-button {
-  border: none;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.btn-add {
-  background: #2563eb;
-  color: white;
-}
-
-.btn-sub {
-  background: #e5e7eb;
+input[type="checkbox"] {
+  transform: scale(1.2);
 }
 
 .btn-export {
@@ -81,20 +55,8 @@ button {
   border-radius: 8px;
   margin-bottom: 14px;
   font-size: 14px;
-}
-
-.total {
-  text-align: center;
-  font-weight: bold;
-  font-size: 16px;
-  color: #16a34a;
-  margin-top: 10px;
-}
-
-.loading {
-  text-align: center;
-  margin-top: 40px;
-  color: #64748b;
+  border: none;
+  cursor: pointer;
 }
 </style>
 </head>
@@ -105,98 +67,91 @@ button {
 
 <button class="btn-export" onclick="exportTxt()">📤 Export ke WhatsApp</button>
 
-<div id="content">
-  <div class="loading">Memuat data...</div>
-</div>
-
-<div class="total" id="grandTotal"></div>
+<div id="content">Memuat data...</div>
 
 <script>
 const DATA_URL = "https://opensheet.elk.sh/1QNnNQ27a0CjMzq9w8TePUTvzyAZ2z98SkDIKz5E1nqU/DATA";
-const UPDATE_URL = "https://script.google.com/macros/s/AKfycbzKiFnFmh0flv5l1hj-ftz2cqvpgyXfRugKFE1wfV6LlKAKGr3VlOSDzrxkV9_RBqgMBQ/exec";
-
-let exportRows = [];
+const UPDATE_URL = "https://script.google.com/macros/s/AKfycbzgFf8HhNvwwJMUNOCrITG2c4aI9QJLSl3DIqqs-CXbvYeExDiWDoHUf11dj8y6M9Maww/exec";
 
 fetch(DATA_URL)
   .then(res => res.json())
-  .then(data => {
-    const content = document.getElementById("content");
-    content.innerHTML = "";
-    let totalAll = 0;
+  .then(data => render(data));
 
-    const categories = [...new Set(data.map(i => i.KATEGORI))];
+function render(data) {
+  const content = document.getElementById("content");
+  content.innerHTML = "";
 
-    categories.forEach(cat => {
-      let rows = "";
-      let hasItem = false;
+  const categories = [...new Set(data.map(i => i.KATEGORI))];
 
-      data.filter(i => i.KATEGORI === cat && i.AKTIF === "TRUE")
-        .forEach(item => {
-          const stock = Number(item["STOCK TERSEDIA"]);
-          const target = Number(item["STOCK TARGET"]);
-          const beli = Math.max(target - stock, 0);
-          const harga = Number(item.HARGA);
-          const total = beli * harga;
+  categories.forEach(cat => {
+    let rows = "";
 
-          if (beli > 0) {
-            hasItem = true;
-            totalAll += total;
+    data.filter(i => i.KATEGORI === cat && i.AKTIF === "TRUE")
+      .forEach(item => {
+        const stock = Number(item["STOCK TERSEDIA"]);
+        const target = Number(item["STOCK TARGET"]);
+        const beli = Math.max(target - stock, 0);
 
-            exportRows.push(
-`${item["NAMA BARANG"]} | Beli: ${beli} ${item.SATUAN}`
-            );
+        if (beli > 0) {
+          const checked = item.DIBELI === "TRUE";
 
-            rows += `
-              <tr>
-                <td class="name">${item["NAMA BARANG"]}</td>
-                <td>${stock}</td>
-                <td>${target}</td>
-                <td class="buy">${beli}</td>
-                <td>
-                  <button class="btn-sub" onclick="updateStock('${item["NAMA BARANG"]}', ${stock - 1})">−</button>
-                  <button class="btn-add" onclick="updateStock('${item["NAMA BARANG"]}', ${stock + 1})">+</button>
-                </td>
-              </tr>
-            `;
-          }
-        });
+          rows += `
+            <tr class="${checked ? 'done' : ''}">
+              <td>
+                <input type="checkbox" ${checked ? "checked" : ""}
+                  onchange="toggleCheck('${item["NAMA BARANG"]}', this.checked, this)">
+              </td>
+              <td class="name">${item["NAMA BARANG"]}</td>
+              <td>${stock}</td>
+              <td>${target}</td>
+              <td class="buy">${beli}</td>
+            </tr>
+          `;
+        }
+      });
 
-      if (hasItem) {
-        content.innerHTML += `
-          <h2>${cat}</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Barang</th>
-                <th>Stok</th>
-                <th>Target</th>
-                <th>Pembelian</th>
-                <th>Update</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows}
-            </tbody>
-          </table>
-        `;
-      }
-    });
-
-    document.getElementById("grandTotal")
-      .innerText = "Total Estimasi Belanja: Rp " + totalAll.toLocaleString();
+    if (rows) {
+      content.innerHTML += `
+        <h2>${cat}</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>✔</th>
+              <th>Barang</th>
+              <th>Stok</th>
+              <th>Target</th>
+              <th>Pembelian</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
   });
+}
 
-function updateStock(nama, stock) {
-  if (stock < 0) return;
+function toggleCheck(nama, checked, el) {
+  const row = el.closest("tr");
+  row.classList.toggle("done", checked);
+
   fetch(UPDATE_URL, {
     method: "POST",
-    body: JSON.stringify({ nama, stock })
-  }).then(() => location.reload());
+    body: JSON.stringify({
+      nama: nama,
+      dibeli: checked ? "TRUE" : "FALSE"
+    })
+  });
 }
 
 function exportTxt() {
   let text = "🛒 DAFTAR BELANJA BULANAN\n\n";
-  exportRows.forEach(r => text += r + "\n");
+  document.querySelectorAll("tbody tr").forEach(row => {
+    if (!row.classList.contains("done")) {
+      const cols = row.querySelectorAll("td");
+      text += `• ${cols[1].innerText} – ${cols[4].innerText}\n`;
+    }
+  });
+
   const blob = new Blob([text], { type: "text/plain" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
