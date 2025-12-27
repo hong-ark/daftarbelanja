@@ -13,8 +13,16 @@ body {
   padding: 14px;
 }
 
-h1 { text-align: center; margin-bottom: 12px; }
-h2 { margin-top: 22px; font-size: 16px; color: #334155; }
+h1 {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+h2 {
+  margin-top: 22px;
+  font-size: 16px;
+  color: #334155;
+}
 
 table {
   width: 100%;
@@ -33,10 +41,20 @@ th, td {
   border-bottom: 1px solid #e5e7eb;
 }
 
-th { background: #f1f5f9; font-weight: 600; }
-td.name { text-align: left; font-weight: 600; }
+th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
 
-.buy { font-weight: 700; color: #dc2626; }
+td.name {
+  text-align: left;
+  font-weight: 600;
+}
+
+.buy {
+  font-weight: 700;
+  color: #dc2626;
+}
 
 tr.done {
   opacity: 0.45;
@@ -58,6 +76,12 @@ input[type="checkbox"] {
   border: none;
   cursor: pointer;
 }
+
+.loading {
+  text-align: center;
+  margin-top: 40px;
+  color: #64748b;
+}
 </style>
 </head>
 
@@ -67,13 +91,14 @@ input[type="checkbox"] {
 
 <button class="btn-export" onclick="exportTxt()">📤 Export ke WhatsApp</button>
 
-<div id="content">Memuat data...</div>
+<div id="content">
+  <div class="loading">Memuat data...</div>
+</div>
 
 <script>
-const DATA_URL = "https://opensheet.elk.sh/1QNnNQ27a0CjMzq9w8TePUTvzyAZ2z98SkDIKz5E1nqU/DATA";
-const UPDATE_URL = "https://script.google.com/macros/s/AKfycbzgFf8HhNvwwJMUNOCrITG2c4aI9QJLSl3DIqqs-CXbvYeExDiWDoHUf11dj8y6M9Maww/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyN8h-L0yTi34iFijHdbD7waX0C1ZFYavsByjmuY3khu5I3w1G54811dif4pkfAS_7K6w/exec";
 
-fetch(DATA_URL)
+fetch(API_URL)
   .then(res => res.json())
   .then(data => render(data));
 
@@ -86,19 +111,21 @@ function render(data) {
   categories.forEach(cat => {
     let rows = "";
 
-    data.filter(i => i.KATEGORI === cat && i.AKTIF === "TRUE")
+    data
+      .filter(i => i.KATEGORI === cat && i.AKTIF === true || i.AKTIF === "TRUE")
       .forEach(item => {
         const stock = Number(item["STOCK TERSEDIA"]);
         const target = Number(item["STOCK TARGET"]);
         const beli = Math.max(target - stock, 0);
 
         if (beli > 0) {
-          const checked = item.DIBELI === "TRUE";
+          const checked = item.DIBELI === true || item.DIBELI === "TRUE";
 
           rows += `
-            <tr class="${checked ? 'done' : ''}">
+            <tr class="${checked ? "done" : ""}">
               <td>
-                <input type="checkbox" ${checked ? "checked" : ""}
+                <input type="checkbox"
+                  ${checked ? "checked" : ""}
                   onchange="toggleCheck('${item["NAMA BARANG"]}', this.checked, this)">
               </td>
               <td class="name">${item["NAMA BARANG"]}</td>
@@ -123,7 +150,9 @@ function render(data) {
               <th>Pembelian</th>
             </tr>
           </thead>
-          <tbody>${rows}</tbody>
+          <tbody>
+            ${rows}
+          </tbody>
         </table>
       `;
     }
@@ -134,11 +163,11 @@ function toggleCheck(nama, checked, el) {
   const row = el.closest("tr");
   row.classList.toggle("done", checked);
 
-  fetch(UPDATE_URL, {
+  fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({
       nama: nama,
-      dibeli: checked ? "TRUE" : "FALSE"
+      dibeli: checked
     })
   });
 }
@@ -148,7 +177,9 @@ function exportTxt() {
   document.querySelectorAll("tbody tr").forEach(row => {
     if (!row.classList.contains("done")) {
       const cols = row.querySelectorAll("td");
-      text += `• ${cols[1].innerText} – ${cols[4].innerText}\n`;
+      const nama = cols[1].innerText;
+      const beli = cols[4].innerText;
+      text += `• ${nama} – ${beli}\n`;
     }
   });
 
