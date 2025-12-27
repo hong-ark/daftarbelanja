@@ -76,12 +76,6 @@ input[type="checkbox"] {
   border: none;
   cursor: pointer;
 }
-
-.loading {
-  text-align: center;
-  margin-top: 40px;
-  color: #64748b;
-}
 </style>
 </head>
 
@@ -91,9 +85,7 @@ input[type="checkbox"] {
 
 <button class="btn-export" onclick="exportTxt()">📤 Export ke WhatsApp</button>
 
-<div id="content">
-  <div class="loading">Memuat data...</div>
-</div>
+<div id="content">Memuat data...</div>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby8MmHxxD_VHTPHTDJf6o1lxu1ZFjWCCaVHTiTyjjCAMMFukLq09holZ90VQiPeT2dQgA/exec";
@@ -112,7 +104,10 @@ function render(data) {
     let rows = "";
 
     data
-      .filter(i => i.KATEGORI === cat && i.AKTIF === true || i.AKTIF === "TRUE")
+      .filter(i =>
+        i.KATEGORI === cat &&
+        (i.AKTIF === true || i.AKTIF === "TRUE")
+      )
       .forEach(item => {
         const stock = Number(item["STOCK TERSEDIA"]);
         const target = Number(item["STOCK TARGET"]);
@@ -120,6 +115,7 @@ function render(data) {
 
         if (beli > 0) {
           const checked = item.DIBELI === true || item.DIBELI === "TRUE";
+          const satuan = item.SATUAN || "";
 
           rows += `
             <tr class="${checked ? "done" : ""}">
@@ -131,7 +127,7 @@ function render(data) {
               <td class="name">${item["NAMA BARANG"]}</td>
               <td>${stock}</td>
               <td>${target}</td>
-              <td class="buy">${beli}</td>
+              <td class="buy">${beli} ${satuan}</td>
             </tr>
           `;
         }
@@ -193,4 +189,3 @@ function exportTxt() {
 
 </body>
 </html>
-
