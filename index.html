@@ -3,31 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Belanja Bulanan</title>
+<title>Belanja Bulanan Keluarga</title>
 
 <style>
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f8;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont;
+  background: #f1f5f9;
   margin: 0;
   padding: 16px;
 }
+
+h1 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
 h2 {
   margin-top: 24px;
+  color: #334155;
 }
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
 }
-.qty {
-  font-weight: bold;
-  color: #d35400;
-}
+
 .total {
   font-weight: bold;
+  font-size: 18px;
+  color: #16a34a;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.item-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.stock {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.buy {
+  margin-top: 6px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.price {
+  margin-top: 4px;
+  font-weight: bold;
+  color: #16a34a;
+}
+
+.controls {
+  margin-top: 10px;
+}
+
+button {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn-add {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-sub {
+  background: #e5e7eb;
+}
+
+.btn-export {
+  background: #16a34a;
+  color: white;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 40px;
+  color: #64748b;
 }
 </style>
 </head>
@@ -35,51 +108,98 @@ h2 {
 <body>
 
 <h1>🛒 Belanja Bulanan</h1>
-<div id="content"></div>
-<h2 id="grandTotal"></h2>
+
+<button class="btn-export" onclick="exportTxt()">📤 Export ke WhatsApp</button>
+
+<div id="content">
+  <div class="loading">Memuat data...</div>
+</div>
+
+<div class="total" id="grandTotal"></div>
 
 <script>
-const SHEET_URL = "https://opensheet.elk.sh/1QNnNQ27a0CjMzq9w8TePUTvzyAZ2z98SkDIKz5E1nqU/DATA";
+const DATA_URL = "https://opensheet.elk.sh/1QNnNQ27a0CjMzq9w8TePUTvzyAZ2z98SkDIKz5E1nqU/DATA";
+const UPDATE_URL = "https://script.google.com/macros/s/AKfycbzKiFnFmh0flv5l1hj-ftz2cqvpgyXfRugKFE1wfV6LlKAKGr3VlOSDzrxkV9_RBqgMBQ/exec";
 
-fetch(SHEET_URL)
+let cardsForExport = [];
+
+fetch(DATA_URL)
   .then(res => res.json())
   .then(data => {
     const content = document.getElementById("content");
+    content.innerHTML = "";
     let totalAll = 0;
 
     const categories = [...new Set(data.map(i => i.KATEGORI))];
 
     categories.forEach(cat => {
-      content.innerHTML += `<h2>${cat}</h2>`;
+      let hasItem = false;
+      let section = `<h2>${cat}</h2>`;
 
-      data.filter(i => 
-        i.KATEGORI === cat && i.AKTIF === "TRUE"
-      ).forEach(item => {
+      data.filter(i => i.KATEGORI === cat && i.AKTIF === "TRUE")
+        .forEach(item => {
 
-        const target = Number(item["STOCK TARGET"]);
-        const stock = Number(item["STOCK TERSEDIA"]);
-        const harga = Number(item.HARGA);
-        const qty = target - stock;
+          const target = Number(item["STOCK TARGET"]);
+          const stock = Number(item["STOCK TERSEDIA"]);
+          const harga = Number(item.HARGA);
+          const qty = target - stock;
 
-        if (qty > 0) {
-          const total = qty * harga;
-          totalAll += total;
+          if (qty > 0) {
+            hasItem = true;
+            const total = qty * harga;
+            totalAll += total;
 
-          content.innerHTML += `
-            <div class="card">
-              <div><strong>${item["NAMA BARANG"]}</strong></div>
-              <div>Stok: ${stock} / Target: ${target} ${item.SATUAN}</div>
-              <div class="qty">Beli: ${qty} ${item.SATUAN}</div>
-              <div class="total">Rp ${total.toLocaleString()}</div>
-            </div>
-          `;
-        }
-      });
+            const textExport =
+`${item["NAMA BARANG"]}
+Stok: ${stock} / Target: ${target} ${item.SATUAN}
+Beli: ${qty} ${item.SATUAN}
+Rp ${total.toLocaleString()}`;
+
+            cardsForExport.push(textExport);
+
+            section += `
+              <div class="card">
+                <div class="item-name">${item["NAMA BARANG"]}</div>
+                <div class="stock">Stok: ${stock} / Target: ${target} ${item.SATUAN}</div>
+                <div class="buy">🛒 Beli: ${qty} ${item.SATUAN}</div>
+                <div class="price">Rp ${total.toLocaleString()}</div>
+
+                <div class="controls">
+                  <button class="btn-sub" onclick="updateStock('${item["NAMA BARANG"]}', ${stock - 1})">−</button>
+                  <button class="btn-add" onclick="updateStock('${item["NAMA BARANG"]}', ${stock + 1})">+</button>
+                </div>
+              </div>
+            `;
+          }
+        });
+
+      if (hasItem) content.innerHTML += section;
     });
 
     document.getElementById("grandTotal")
       .innerText = "Total Belanja: Rp " + totalAll.toLocaleString();
   });
+
+function updateStock(nama, stock) {
+  if (stock < 0) return;
+  fetch(UPDATE_URL, {
+    method: "POST",
+    body: JSON.stringify({ nama, stock })
+  }).then(() => location.reload());
+}
+
+function exportTxt() {
+  let text = "🛒 DAFTAR BELANJA BULANAN\n\n";
+  cardsForExport.forEach(item => {
+    text += item + "\n\n";
+  });
+
+  const blob = new Blob([text], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "belanja-bulanan.txt";
+  link.click();
+}
 </script>
 
 </body>
