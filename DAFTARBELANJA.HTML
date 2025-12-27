@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Belanja Bulanan</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 16px;
+}
+h2 {
+  margin-top: 24px;
+}
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.qty {
+  font-weight: bold;
+  color: #d35400;
+}
+.total {
+  font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🛒 Belanja Bulanan</h1>
+<div id="content"></div>
+<h2 id="grandTotal"></h2>
+
+<script>
+const SHEET_URL = "https://opensheet.elk.sh/1QNnNQ27a0CjMzq9w8TePUTvzyAZ2z98SkDIKz5E1nqU/DATA";
+
+fetch(SHEET_URL)
+  .then(res => res.json())
+  .then(data => {
+    const content = document.getElementById("content");
+    let totalAll = 0;
+
+    const categories = [...new Set(data.map(i => i.KATEGORI))];
+
+    categories.forEach(cat => {
+      content.innerHTML += `<h2>${cat}</h2>`;
+
+      data.filter(i => 
+        i.KATEGORI === cat && i.AKTIF === "TRUE"
+      ).forEach(item => {
+
+        const target = Number(item["STOCK TARGET"]);
+        const stock = Number(item["STOCK TERSEDIA"]);
+        const harga = Number(item.HARGA);
+        const qty = target - stock;
+
+        if (qty > 0) {
+          const total = qty * harga;
+          totalAll += total;
+
+          content.innerHTML += `
+            <div class="card">
+              <div><strong>${item["NAMA BARANG"]}</strong></div>
+              <div>Stok: ${stock} / Target: ${target} ${item.SATUAN}</div>
+              <div class="qty">Beli: ${qty} ${item.SATUAN}</div>
+              <div class="total">Rp ${total.toLocaleString()}</div>
+            </div>
+          `;
+        }
+      });
+    });
+
+    document.getElementById("grandTotal")
+      .innerText = "Total Belanja: Rp " + totalAll.toLocaleString();
+  });
+</script>
+
+</body>
+</html>
