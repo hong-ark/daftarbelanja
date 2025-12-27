@@ -66,13 +66,13 @@ input[type="checkbox"] {
 }
 
 .btn-export {
-  background: #16a34a;
+  background: #25D366; /* warna WhatsApp */
   color: white;
   width: 100%;
-  padding: 8px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   margin-bottom: 14px;
-  font-size: 14px;
+  font-size: 15px;
   border: none;
   cursor: pointer;
 }
@@ -83,7 +83,7 @@ input[type="checkbox"] {
 
 <h1>🛒 Tabel Belanja Bulanan</h1>
 
-<button class="btn-export" onclick="exportTxt()">📤 Export ke WhatsApp</button>
+<button class="btn-export" onclick="exportWhatsApp()">📤 Kirim ke WhatsApp</button>
 
 <div id="content">Memuat data...</div>
 
@@ -168,8 +168,9 @@ function toggleCheck(nama, checked, el) {
   });
 }
 
-function exportTxt() {
+function exportWhatsApp() {
   let text = "🛒 DAFTAR BELANJA BULANAN\n\n";
+
   document.querySelectorAll("tbody tr").forEach(row => {
     if (!row.classList.contains("done")) {
       const cols = row.querySelectorAll("td");
@@ -179,11 +180,14 @@ function exportTxt() {
     }
   });
 
-  const blob = new Blob([text], { type: "text/plain" });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = "belanja-bulanan.txt";
-  link.click();
+  if (text.trim() === "") {
+    alert("Semua barang sudah dibeli 👍");
+    return;
+  }
+
+  const encodedText = encodeURIComponent(text);
+  const waUrl = `https://wa.me/?text=${encodedText}`;
+  window.open(waUrl, "_blank");
 }
 </script>
 
