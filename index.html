@@ -88,7 +88,7 @@ input[type="checkbox"] {
 <div id="content">Memuat data...</div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycby8MmHxxD_VHTPHTDJf6o1lxu1ZFjWCCaVHTiTyjjCAMMFukLq09holZ90VQiPeT2dQgA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyN8h-L0yTi34iFijHdbD7waX0C1ZFYavsByjmuY3khu5I3w1G54811dif4pkfAS_7K6w/exec";
 
 fetch(API_URL)
   .then(res => res.json())
@@ -125,9 +125,9 @@ function render(data) {
                   onchange="toggleCheck('${item["NAMA BARANG"]}', this.checked, this)">
               </td>
               <td class="name">${item["NAMA BARANG"]}</td>
-              <td>${STOCK}</td>
-              <td>${TARGET}</td>
               <td class="buy">${beli} ${satuan}</td>
+              <td>${stock}</td>
+              <td>${target}</td>
             </tr>
           `;
         }
@@ -141,9 +141,9 @@ function render(data) {
             <tr>
               <th>✔</th>
               <th>Barang</th>
+              <th>Pembelian</th>
               <th>Stok</th>
               <th>Target</th>
-              <th>Pembelian</th>
             </tr>
           </thead>
           <tbody>
@@ -174,7 +174,7 @@ function exportTxt() {
     if (!row.classList.contains("done")) {
       const cols = row.querySelectorAll("td");
       const nama = cols[1].innerText;
-      const beli = cols[4].innerText;
+      const beli = cols[2].innerText;
       text += `• ${nama} – ${beli}\n`;
     }
   });
@@ -189,4 +189,3 @@ function exportTxt() {
 
 </body>
 </html>
-
